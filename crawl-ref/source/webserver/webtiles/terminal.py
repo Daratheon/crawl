@@ -8,6 +8,8 @@ import struct
 import sys
 import termios
 import time
+import json
+import logging
 
 import tornado.ioloop
 from tornado.escape import to_unicode
@@ -166,6 +168,28 @@ class TerminalRecorder(object):
                 self.error_buffer += buf
                 self._log_error_output()
 
+                # --- BEGIN sound/debug hook for STDERR (safe) ---
+                try:
+                    # decode safely
+                    uerr = to_unicode(buf)
+                    if "@@SOUND" in uerr:
+                        payload = uerr.split("@@SOUND", 1)[1].strip()
+                        try:
+                            ev = json.loads(payload)
+                        except Exception as e:
+                            logging.warning("Bad @@SOUND payload (stderr): %r (%s)", payload, e)
+                            ev = {"key": "inventory_close", "volume": 1.0}
+
+                        if not hasattr(self, "pending_sfx"):
+                            self.pending_sfx = []
+                        self.pending_sfx.append(ev)
+
+                        import sys
+                        print("DEBUG queued SFX (stderr):", ev, file=sys.stderr, flush=True)
+                except Exception:
+                    logging.exception("SFX hook error in _handle_err_read")
+                # --- END sound/debug hook for STDERR ---
+        
             self.poll()
 
     def write_ttyrec_header(self, sec, usec, l):
@@ -198,6 +222,32 @@ class TerminalRecorder(object):
 
             if len(line) > 0:
                 if line[-1] == b"\r": line = line[:-1]
+
+            # --- BEGIN sound hook ---
+            if self is not None:  # just to be explicit we're in the instance
+                uline = to_unicode(line)
+                
+                #debug
+                if uline.startswith('@@'):
+                    import sys
+                    print("DEBUG CONTROL:", uline, file=sys.stderr, flush=True)
+
+                if uline.startswith('@@SOUND '):
+                    payload = uline[len('@@SOUND '):]
+                    try:
+                        ev = json.loads(payload)  # e.g. {"key":"inventory_open","volume":0.9}
+                    except Exception as e:
+                        logging.warning("Bad @@SOUND payload: %r (%s)", payload, e)
+                    else:
+                        # stash to forward with the next WS message
+                        if not hasattr(self, "pending_sfx"):
+                            self.pending_sfx = []
+                        self.pending_sfx.append(ev)
+                    # swallow this line so it doesn't go through normal handlers
+                    pos = self.output_buffer.find(b"\n")
+                    continue
+            # --- END sound hook ---
+
 
                 if self.output_callback:
                     self.output_callback(to_unicode(line))

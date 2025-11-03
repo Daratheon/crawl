@@ -1492,6 +1492,12 @@ void display_inventory()
         redraw_screen();
         update_screen();
     }
+        //alteration
+        mpr("Opened inventory boi.");
+        #ifdef USE_TILE_WEB
+            std::fprintf(stderr, "@@SOUND {\"key\":\"inventory_close\",\"volume\":0.9}\n");
+            std::fflush(stderr);
+        #endif
 }
 
 static string _drop_menu_titlefn(const Menu*, const string &)

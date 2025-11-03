@@ -1450,14 +1450,65 @@ class CrawlWebSocket(tornado.websocket.WebSocketHandler):
     # send anything in the per-socket queue
     def flush_messages(self):
         # type: () -> bool
+        # --- BEGIN robust SFX discovery (run BEFORE empty-queue check) ---
+        try:
+            def _drain_from(obj, label):
+                try:
+                    q = getattr(obj, "pending_sfx", None)
+                    if q:
+                        self.message_queue.append(json_encode({"msg": "sfx", "events": q}))
+                        setattr(obj, "pending_sfx", [])
+                        # optional server-side trace:
+                        # import sys; print("DEBUG drained SFX from", label, file=sys.stderr, flush=True)
+                        return True
+                except Exception:
+                    pass
+                return False
+
+            drained = False
+
+            # 1) Try common places quickly
+            if _drain_from(self, "self"):
+                drained = True
+            else:
+                proc = getattr(self, "process", None)
+                if proc:
+                    # quick common names
+                    for name in ("terminal", "term", "recorder", "session", "player"):
+                        obj = getattr(proc, name, None)
+                        if obj and _drain_from(obj, f"process.{name}"):
+                            drained = True
+                            break
+
+                    # 2) If still not found, do a shallow scan of all public attrs on process
+                    if not drained:
+                        for name in dir(proc):
+                            if name.startswith("_"):
+                                continue
+                            try:
+                                obj = getattr(proc, name, None)
+                            except Exception:
+                                continue
+                            if _drain_from(obj, f"process.{name}"):
+                                drained = True
+                                break
+        except Exception:
+            pass
+        # --- END robust SFX discovery ---
+
+        # normal path
         if self.client_closed or len(self.message_queue) == 0:
             return False
 
-        batch = ("{\"msgs\":["
+        batch = (
+            "{\"msgs\":["
             + ",".join(self.message_queue)
-            + "]}")
-        self.message_queue = [] # always empty the queue
+            + "]}"
+        )
+        self.message_queue = []  # always empty the queue
         return self._send_raw_message(batch)
+
+
 
     # n.b. this looks a lot like superclass write_message, but has a static
     # type signature that is not compatible with it, so we do not override

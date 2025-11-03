@@ -77,8 +77,20 @@ function (exports, $, key_conversion, chat, comm) {
             {
                 if (window.log_messages && window.log_messages !== 2)
                     console.log("Message: " + msgs[i].msg, msgs[i]);
-                if (!comm.handle_message_immediately(msgs[i]))
-                    message_queue.push(msgs[i]);
+
+		// --- SOUND MESSAGE HANDLER ---
+		if (msgs[i].msg === "sfx" && Array.isArray(msgs[i].events)) {
+    		    for (const ev of msgs[i].events) {
+        		 if (window.Sound && typeof Sound.play === "function") {
+            		     Sound.play(ev.key, { volume: ev.volume ?? 1.0 });
+                         }
+                    }
+    		    continue; // skip normal handling
+                }
+                // --- END SOUND HANDLER ---
+
+		if (!comm.handle_message_immediately(msgs[i]))
+		     message_queue.push(msgs[i]);
             }
         }
         else
