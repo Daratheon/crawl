@@ -1476,6 +1476,11 @@ static int _invent_select(const char *title = nullptr,
 void display_inventory()
 {
 
+    #ifdef USE_TILE_WEB
+        std::fprintf(stderr, "@@SOUND {\"key\":\"inventory_open\",\"volume\":0.9}\n");
+        std::fflush(stderr);
+    #endif
+
     int flags = MF_SINGLESELECT | MF_ALLOW_FORMATTING | MF_SECONDARY_SCROLL;
     if (Options.show_paged_inventory)
         flags |= MF_PAGED_INVENTORY;
