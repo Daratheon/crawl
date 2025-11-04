@@ -1450,7 +1450,7 @@ class CrawlWebSocket(tornado.websocket.WebSocketHandler):
     # send anything in the per-socket queue
     def flush_messages(self):
         # type: () -> bool
-        # --- BEGIN robust SFX discovery (run BEFORE empty-queue check) ---
+        # --- BEGIN SFX discovery---
         try:
             def _drain_from(obj, label):
                 try:
@@ -1458,8 +1458,6 @@ class CrawlWebSocket(tornado.websocket.WebSocketHandler):
                     if q:
                         self.message_queue.append(json_encode({"msg": "sfx", "events": q}))
                         setattr(obj, "pending_sfx", [])
-                        # optional server-side trace:
-                        # import sys; print("DEBUG drained SFX from", label, file=sys.stderr, flush=True)
                         return True
                 except Exception:
                     pass
@@ -1467,7 +1465,6 @@ class CrawlWebSocket(tornado.websocket.WebSocketHandler):
 
             drained = False
 
-            # 1) Try common places quickly
             if _drain_from(self, "self"):
                 drained = True
             else:
@@ -1479,8 +1476,7 @@ class CrawlWebSocket(tornado.websocket.WebSocketHandler):
                         if obj and _drain_from(obj, f"process.{name}"):
                             drained = True
                             break
-
-                    # 2) If still not found, do a shallow scan of all public attrs on process
+                            
                     if not drained:
                         for name in dir(proc):
                             if name.startswith("_"):
@@ -1494,7 +1490,7 @@ class CrawlWebSocket(tornado.websocket.WebSocketHandler):
                                 break
         except Exception:
             pass
-        # --- END robust SFX discovery ---
+        # --- END SFX discovery ---
 
         # normal path
         if self.client_closed or len(self.message_queue) == 0:
