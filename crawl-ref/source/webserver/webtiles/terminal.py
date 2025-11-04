@@ -168,22 +168,27 @@ class TerminalRecorder(object):
                 self.error_buffer += buf
                 self._log_error_output()
 
-                # --- BEGIN sound/debug hook for STDERR (safe) ---
+                # --- BEGIN sound/debug hook for STDERR---
                 try:
-                    # decode safely
+                    #decode byte strings from stderr
                     uerr = to_unicode(buf)
+                    #checks for lines in stderr starting with @@SOUND
                     if "@@SOUND" in uerr:
+                        #pulls the string into a payload
                         payload = uerr.split("@@SOUND", 1)[1].strip()
                         try:
+                            #parse the string into sound and volume
                             ev = json.loads(payload)
+                        #throw exception if it finds a @@SOUND that has incorrect perameters
                         except Exception as e:
                             logging.warning("Bad @@SOUND payload (stderr): %r (%s)", payload, e)
                             ev = {"key": "inventory_close", "volume": 1.0}
-
+                        #Search for pending sfx, create the list if no sfx is found
                         if not hasattr(self, "pending_sfx"):
                             self.pending_sfx = []
                         self.pending_sfx.append(ev)
 
+                        #Debug remove later in full project
                         import sys
                         print("DEBUG queued SFX (stderr):", ev, file=sys.stderr, flush=True)
                 except Exception:

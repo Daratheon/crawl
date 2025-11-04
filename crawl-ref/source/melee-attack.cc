@@ -1549,6 +1549,14 @@ bool melee_attack::attack()
             return false;
         }
 
+        // 🔊 PLAY SLASH ON REAL SWING (player-only, first swing)
+    #ifdef USE_TILE_WEB
+    if (attacker && attacker->is_player() && attack_number == 0) {
+    std::fprintf(stderr, "@@SOUND {\"key\":\"sword_slash\",\"volume\":0.9}\n");
+    std::fflush(stderr);
+    }
+    #endif
+
         if (!handle_phase_attempted())
             return false;
     }
@@ -1610,7 +1618,6 @@ bool melee_attack::attack()
         return attack_occurred;
     }
 
-    // Now that we finally know that this swing is really happening, count it.
     if (attacker->is_player())
     {
         if (weapon)

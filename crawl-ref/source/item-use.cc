@@ -1589,10 +1589,8 @@ void do_equipment_change(item_def* to_equip, equipment_slot equip_slot,
                 unequip_item(*item);
                 //sound hook
                 #ifdef USE_TILE_WEB
-                    if (item->base_type == OBJ_ARMOUR) {
                         std::fprintf(stderr, "@@SOUND {\"key\":\"armor_remove\",\"volume\":0.9}\n");
                         std::fflush(stderr);
-                    }
                 #endif
             }
         }
@@ -1607,10 +1605,8 @@ void do_equipment_change(item_def* to_equip, equipment_slot equip_slot,
         else {
             equip_item(equip_slot, to_equip->link);
             #ifdef USE_TILE_WEB
-                if (to_equip->base_type == OBJ_ARMOUR) {
                     std::fprintf(stderr, "@@SOUND {\"key\":\"armor_equip\",\"volume\":0.9}\n");
                     std::fflush(stderr);
-                }
             #endif
 }
     }

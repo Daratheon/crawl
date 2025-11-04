@@ -1531,6 +1531,17 @@ void equip_item(equipment_slot slot, int item_slot, bool msg, bool skip_effects)
     you.equipment.add(item, slot);
     you.equipment.update();
 
+    //sound hook
+    #ifdef USE_TILE_WEB
+{
+    const item_def &it = you.inv[item_slot];
+    if (it.base_type == OBJ_ARMOUR) {
+        std::fprintf(stderr, "@@SOUND {\"key\":\"armor_equip\",\"volume\":0.9}\n");
+        std::fflush(stderr);
+    }
+}
+#endif
+
     if (!skip_effects)
         equip_effect(item_slot, false, msg);
 
@@ -1576,6 +1587,17 @@ bool unequip_item(item_def& item, bool msg, bool skip_effects)
     const int item_slot = item.link;
     you.equipment.remove(item);
     you.equipment.update();
+
+    //sound hook
+    #ifdef USE_TILE_WEB
+{
+    const item_def &it = item; // already in scope
+    if (it.base_type == OBJ_ARMOUR) {
+        std::fprintf(stderr, "@@SOUND {\"key\":\"armor_remove\",\"volume\":0.9}\n");
+        std::fflush(stderr);
+    }
+}
+#endif
 
     if (!skip_effects)
         unequip_effect(item_slot, false, msg);
