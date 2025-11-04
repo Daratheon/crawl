@@ -1,4 +1,3 @@
-// /static/scripts/sound.js (or /static/js/sound.js)
 (function (root, factory) {
   // UMD: AMD (RequireJS) or browser global (window.Sound)
   if (typeof define === "function" && define.amd) {
@@ -15,7 +14,7 @@
   function ensureCtx() {
     if (!ctx) {
       const AC = root.AudioContext || root.webkitAudioContext;
-      ctx = new AC();                       // created lazily; starts "suspended"
+      ctx = new AC();                      
       root.__audioCtx = ctx;
     }
     return ctx;
