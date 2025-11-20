@@ -229,6 +229,11 @@ static void _resolve_species(newgame_def& ng, const newgame_def& ng_choice)
 
     ASSERT(candidate_species.size() > 0);
     ng.species = candidate_species[random2(candidate_species.size())];
+
+    #ifdef USE_TILE_WEB
+        std::fprintf(stderr, "@@SOUND {\"key\":\"race_select\",\"volume\":0.9}\n");
+        std::fflush(stderr);
+    #endif
 }
 
 static void _resolve_job(newgame_def& ng, const newgame_def& ng_choice)
