@@ -399,6 +399,21 @@ function ($, comm, client, options, focus_trap) {
     var has_received_ui_state = false;
     $(document).off("game_init.ui")
         .on("game_init.ui", function () {
+
+          // ==========================
+        // === BGM START HOOK HERE ==
+        // ==========================
+        if (window.Sound && Sound.play) {
+            if (window.__bgmSource) {
+                try { window.__bgmSource.stop(); } catch {}
+            }
+            window.__bgmSource = Sound.play("bgm_main", { volume: 0.15 });
+            if (window.__bgmSource)
+                window.__bgmSource.loop = true;
+
+            console.log("[BGM] Started from game_init");
+        }
+        
         has_received_ui_state = false;
         $(document).off("game_keydown.ui game_keypress.ui")
             .on("game_keydown.ui", ui_key_handler)

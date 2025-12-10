@@ -3,6 +3,9 @@ define(["exports", "jquery", "key_conversion", "chat", "comm",
         "contrib/jquery.waitforimages", "contrib/inflate"],
 function (exports, $, key_conversion, chat, comm) {
 
+        // Global flag for background music
+        let __bgm_started = false;
+
     // Need to keep this global for backwards compatibility :(
     window.current_layer = "crt";
 
@@ -1380,6 +1383,13 @@ function (exports, $, key_conversion, chat, comm) {
         show_dialog("#force_terminate");
     }
 
+    // Simple game-start handler: just mark that we're playing.
+    // BGM start lives in game.js now.
+    function crawl_started() {
+        playing = true;
+        watching = false;
+    }
+
     comm.register_handlers({
         "stale_processes": handle_stale_processes,
         "force_terminate?": handle_force_terminate
@@ -1396,20 +1406,25 @@ function (exports, $, key_conversion, chat, comm) {
         return watching;
     }
 
-    function crawl_started()
-    {
-        playing = true;
-        watching = false;
-    }
+function crawl_ended(data)
+{
+    playing = false;
 
-    function crawl_ended(data)
-    {
-        playing = false;
-
-        exit_reason = data.reason;
-        exit_message = data.message;
-        exit_dump = data.dump;
+    // ============================
+    // === STOP BGM ON GAME END ===
+    // ============================
+    if (window.__bgmSource) {
+        try { window.__bgmSource.stop(); } catch {}
+        window.__bgmSource = null;
     }
+    // ============================
+    // ===   END BGM STOP HOOK   ===
+    // ============================
+
+    exit_reason = data.reason;
+    exit_message = data.message;
+    exit_dump = data.dump;
+}
 
     function hash_changed()
     {

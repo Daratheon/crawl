@@ -87,13 +87,73 @@
     root.document.addEventListener("keydown", unlock, { once: true });
   })();
 
+
+  //bgm code
+
+  const bgmBuffers = new Map();
+  let bgmSource = null;
+
+  async function loadMusic(name, url) {
+    ensureCtx();
+    const res = await fetch(url, { credentials: "same-origin" });
+    if (!res.ok) throw new Error(`HTTP ${res.status} loading ${url}`);
+    const arr = await res.arrayBuffer();
+    const audioBuf = await decodeArrayBuffer(arr);
+    bgmBuffers.set(name, audioBuf);
+    try { console.log("[BGM] loaded:", name, url); } catch {}
+    return audioBuf;
+  }
+
+  function playMusic(name, { volume = 0.5 } = {}) {
+    ensureCtx();
+
+
+    if (bgmSource) {
+      try { bgmSource.stop(); } catch {}
+      bgmSource = null;
+    }
+
+    const buf = bgmBuffers.get(name);
+    if (!buf) {
+      try { console.warn("[BGM] Not loaded:", name); } catch {}
+      return;
+    }
+
+    const src = ctx.createBufferSource();
+    const gain = ctx.createGain();
+    gain.gain.value = volume;
+    src.buffer = buf;
+    src.loop = true;
+    src.connect(gain).connect(ctx.destination);
+
+    src.start();
+    bgmSource = src;
+
+    try { console.log("[BGM] play:", name, "vol:", volume); } catch {}
+  }
+
+  function stopMusic() {
+    if (bgmSource) {
+      try { bgmSource.stop(); } catch {}
+      bgmSource = null;
+      try { console.log("[BGM] stopped"); } catch {}
+    }
+  }
+
+  //exports for public api
+
   return {
     load,
     play,
     resume,
     state,
-    // exposed for debugging:
-    _buffers: buffers
+    _buffers: buffers,
+
+    // NEW SECTION
+    background: {
+      load: loadMusic,
+      play: playMusic,
+      stop: stopMusic
+    }
   };
 });
-
